@@ -51,21 +51,57 @@ function ScanContent() {
   const [result, setResult] = useState<OCRResult>({ brand: '', description: '', price: '' });
   const [qty, setQty] = useState('1');
   const [cameraError, setCameraError] = useState('');
+  const [cameraErrorType, setCameraErrorType] = useState<'permission' | 'unavailable' | ''>('');
   const [cameraStarted, setCameraStarted] = useState(false);
 
   const startCamera = useCallback(async () => {
+    setCameraError('');
+    setCameraErrorType('');
+
+    // Check if getUserMedia is even available (won't be on non-https without Capacitor)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Camera API not available on this device.');
+      setCameraErrorType('unavailable');
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
+      // Try back camera first, fall back to any camera
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+      } catch {
+        // Fall back to any available camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       setCameraError('');
-    } catch {
-      setCameraError('Camera not available. Use manual entry instead.');
+      setCameraErrorType('');
+    } catch (err: unknown) {
+      const error = err as { name?: string; message?: string };
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setCameraErrorType('permission');
+        setCameraError(
+          'Camera permission denied. Please allow camera access:\n\n' +
+          'Android: Settings → Apps → Ohms Basket → Permissions → Camera → Allow'
+        );
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        setCameraErrorType('unavailable');
+        setCameraError('No camera found on this device.');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        setCameraErrorType('unavailable');
+        setCameraError('Camera is in use by another app. Close other apps and try again.');
+      } else {
+        setCameraErrorType('unavailable');
+        setCameraError(`Camera error: ${error.message || 'Unknown error'}. Try restarting the app.`);
+      }
     }
   }, []);
 
@@ -157,15 +193,26 @@ function ScanContent() {
       {phase === 'camera' && (
         <div className="flex flex-col flex-1 items-center justify-between py-6 px-4">
           {cameraError ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <p className="text-3xl mb-4">📷</p>
-              <p className="text-white text-sm mb-6">{cameraError}</p>
-              <button
-                onClick={() => router.push(`/basket?id=${id}`)}
-                className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl"
-              >
-                Back to Basket
-              </button>
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+              <p className="text-4xl mb-4">{cameraErrorType === 'permission' ? '🔒' : '📷'}</p>
+              <p className="text-white text-sm mb-2 font-semibold">
+                {cameraErrorType === 'permission' ? 'Camera Permission Required' : 'Camera Unavailable'}
+              </p>
+              <p className="text-slate-300 text-xs mb-6 leading-relaxed whitespace-pre-line">{cameraError}</p>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button
+                  onClick={() => { setCameraError(''); setCameraErrorType(''); startCamera(); }}
+                  className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => router.push(`/basket?id=${id}`)}
+                  className="border border-slate-500 text-slate-300 font-medium px-6 py-3 rounded-xl"
+                >
+                  Back to Basket
+                </button>
+              </div>
             </div>
           ) : (
             <>
