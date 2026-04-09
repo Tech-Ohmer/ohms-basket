@@ -21,10 +21,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Set up Java 17 (required for Android build)
+      - name: Set up Java 21 (required for Capacitor Android build)
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Install dependencies
