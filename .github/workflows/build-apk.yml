@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Build Next.js static export
-        run: NEXT_OUTPUT=export npx next build
+        run: NEXT_OUTPUT=export npx next build --webpack
         env:
           NEXT_OUTPUT: export
 

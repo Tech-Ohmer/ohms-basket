@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { db, type Trip, type BasketItem } from '@/lib/db';
-import { syncTripToCloud, syncPriceRecordsToCloud } from '@/lib/sync';
 
-export default function BasketPage() {
-  const { id } = useParams<{ id: string }>();
+function BasketContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') ?? '';
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [items, setItems] = useState<BasketItem[]>([]);
@@ -18,6 +18,7 @@ export default function BasketPage() {
   const [paying, setPaying] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (!id) return;
     const t = await db.trips.get(id);
     if (!t) return;
     setTrip(t);
@@ -85,11 +86,7 @@ export default function BasketPage() {
     setPaying(true);
     const updated = { ...trip, total, paid: true };
     await db.trips.put(updated);
-    // Sync to cloud
-    const priceRecs = await db.priceRecords.where('date').aboveOrEqual(trip.date).toArray();
-    await syncTripToCloud(updated, items);
-    await syncPriceRecordsToCloud(priceRecs);
-    router.push(`/history/${trip.id}`);
+    router.push(`/history?id=${trip.id}`);
   };
 
   const status = budgetStatus();
@@ -211,7 +208,7 @@ export default function BasketPage() {
       <div className="bg-white border-t border-slate-100 px-4 py-3 safe-bottom max-w-lg mx-auto w-full">
         <div className="flex gap-3">
           <button
-            onClick={() => router.push(`/scan/${id}`)}
+            onClick={() => router.push(`/scan?id=${id}`)}
             className="flex-1 border-2 border-green-600 text-green-600 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-green-50 transition-colors"
           >
             📷 Scan Tag
@@ -234,5 +231,13 @@ export default function BasketPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BasketPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-slate-400">Loading...</div>}>
+      <BasketContent />
+    </Suspense>
   );
 }

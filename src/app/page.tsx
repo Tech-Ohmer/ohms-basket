@@ -40,7 +40,7 @@ export default function HomePage() {
       paid: false,
     };
     await db.trips.put(trip);
-    router.push(`/basket/${id}`);
+    router.push(`/basket?id=${id}`);
   };
 
   const formatDate = (iso: string) => {
@@ -148,7 +148,7 @@ export default function HomePage() {
               {trips.map(trip => (
                 <div
                   key={trip.id}
-                  onClick={() => router.push(trip.paid ? `/history/${trip.id}` : `/basket/${trip.id}`)}
+                  onClick={() => router.push(trip.paid ? `/history?id=${trip.id}` : `/basket?id=${trip.id}`)}
                   className="bg-white rounded-2xl shadow-sm px-4 py-4 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
                 >
                   <div>

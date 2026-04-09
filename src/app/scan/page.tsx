@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRef, useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { db, type BasketItem, type PriceRecord } from '@/lib/db';
 
 interface OCRResult {
@@ -37,8 +37,9 @@ function parseOCRText(text: string): OCRResult {
   return { brand, description, price };
 }
 
-export default function ScanPage() {
-  const { id } = useParams<{ id: string }>();
+function ScanContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') ?? '';
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,6 +51,7 @@ export default function ScanPage() {
   const [result, setResult] = useState<OCRResult>({ brand: '', description: '', price: '' });
   const [qty, setQty] = useState('1');
   const [cameraError, setCameraError] = useState('');
+  const [cameraStarted, setCameraStarted] = useState(false);
 
   const startCamera = useCallback(async () => {
     try {
@@ -127,15 +129,16 @@ export default function ScanPage() {
     await db.priceRecords.put(rec);
     // Update trip total
     if (trip) {
-      const items = await db.basketItems.where('tripId').equals(id).toArray();
-      const newTotal = items.reduce((s, i) => s + i.price * i.quantity, 0) + item.price * item.quantity;
+      const allItems = await db.basketItems.where('tripId').equals(id).toArray();
+      const newTotal = allItems.reduce((s, i) => s + i.price * i.quantity, 0) + item.price * item.quantity;
       await db.trips.put({ ...trip, total: newTotal });
     }
-    router.push(`/basket/${id}`);
+    router.push(`/basket?id=${id}`);
   };
 
-  // Auto-start camera on mount
-  if (phase === 'camera' && !streamRef.current && !cameraError) {
+  // Auto-start camera on mount (once)
+  if (phase === 'camera' && !streamRef.current && !cameraError && !cameraStarted) {
+    setCameraStarted(true);
     startCamera();
   }
 
@@ -144,7 +147,7 @@ export default function ScanPage() {
       {/* Header */}
       <header className="bg-green-600 text-white px-4 py-4 flex items-center gap-3">
         <button
-          onClick={() => { stopCamera(); router.push(`/basket/${id}`); }}
+          onClick={() => { stopCamera(); router.push(`/basket?id=${id}`); }}
           className="text-green-100 hover:text-white text-xl"
         >←</button>
         <h1 className="font-semibold">Scan Price Tag</h1>
@@ -158,7 +161,7 @@ export default function ScanPage() {
               <p className="text-3xl mb-4">📷</p>
               <p className="text-white text-sm mb-6">{cameraError}</p>
               <button
-                onClick={() => router.push(`/basket/${id}`)}
+                onClick={() => router.push(`/basket?id=${id}`)}
                 className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl"
               >
                 Back to Basket
@@ -196,6 +199,7 @@ export default function ScanPage() {
       {phase === 'preview' && (
         <div className="flex flex-col flex-1 bg-slate-900 items-center justify-between py-6 px-4">
           <div className="w-full max-w-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={capturedImage} alt="Captured" className="w-full rounded-2xl shadow-lg" />
           </div>
           <p className="text-slate-400 text-sm text-center my-4">Looks good? Extract text from this image.</p>
@@ -273,6 +277,7 @@ export default function ScanPage() {
 
               {/* Image thumbnail */}
               <div className="mb-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={capturedImage} alt="Scanned" className="w-full max-h-32 object-cover rounded-xl opacity-60" />
                 <p className="text-xs text-slate-400 mt-1 text-center">Image used for OCR — not stored</p>
               </div>
@@ -297,5 +302,13 @@ export default function ScanPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ScanPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-slate-400">Loading...</div>}>
+      <ScanContent />
+    </Suspense>
   );
 }
