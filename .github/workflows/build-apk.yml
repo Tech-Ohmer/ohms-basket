@@ -6,6 +6,9 @@ on:
       - 'v*'           # triggers on v1.0.0, v1.1.0, etc.
   workflow_dispatch:   # manual trigger from GitHub Actions tab
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     name: Build Android APK
