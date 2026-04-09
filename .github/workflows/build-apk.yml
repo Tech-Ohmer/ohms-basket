@@ -1,0 +1,80 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'           # triggers on v1.0.0, v1.1.0, etc.
+  workflow_dispatch:   # manual trigger from GitHub Actions tab
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up Java 17 (required for Android build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js static export
+        run: NEXT_OUTPUT=export npx next build
+        env:
+          NEXT_OUTPUT: export
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+        working-directory: android
+
+      - name: Rename APK
+        run: |
+          VERSION=${GITHUB_REF_NAME:-dev}
+          cp android/app/build/outputs/apk/debug/app-debug.apk ohms-basket-${VERSION}.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohms-basket-apk
+          path: ohms-basket-*.apk
+          retention-days: 30
+
+      - name: Create GitHub Release with APK
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ohms-basket-*.apk
+          name: Ohm's Basket ${{ github.ref_name }}
+          body: |
+            ## Ohm's Basket ${{ github.ref_name }}
+
+            ### Install on Android
+            1. Download `ohms-basket-${{ github.ref_name }}.apk`
+            2. On your Android phone: Settings → Security → Allow unknown sources
+            3. Open the downloaded APK to install
+
+            ### What's included
+            - Offline-first grocery budget tracker
+            - Camera OCR for shelf price tags
+            - Family sync via JSON export/import
+            - Price history and trip comparisons
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

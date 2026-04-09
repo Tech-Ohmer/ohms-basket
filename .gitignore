@@ -46,8 +46,10 @@ public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
 
-# Android / Capacitor
-android/
+# Android build outputs only (keep android/ source in repo for CI)
+android/.gradle/
+android/app/build/
+android/build/
 *.apk
 *.aab
 

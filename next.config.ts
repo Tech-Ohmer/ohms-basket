@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Headers to enable PWA caching via native browser service worker
+  // Static export for Capacitor APK build (set NEXT_OUTPUT=export for APK CI)
+  output: process.env.NEXT_OUTPUT === "export" ? "export" : undefined,
+  // Headers for PWA manifest (web deployment only)
   async headers() {
     return [
       {
