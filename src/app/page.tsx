@@ -177,6 +177,25 @@ export default function HomePage() {
             View all trips &amp; price history →
           </button>
         )}
+
+        {/* Quick nav */}
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <button onClick={() => router.push('/list')}
+            className="bg-white rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
+            <span className="text-2xl">📝</span>
+            <span className="text-xs font-medium text-slate-600 text-center">Shopping List</span>
+          </button>
+          <button onClick={() => router.push('/budget')}
+            className="bg-white rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
+            <span className="text-2xl">📅</span>
+            <span className="text-xs font-medium text-slate-600 text-center">Monthly Budget</span>
+          </button>
+          <button onClick={() => router.push('/history')}
+            className="bg-white rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
+            <span className="text-2xl">🏪</span>
+            <span className="text-xs font-medium text-slate-600 text-center">Price Compare</span>
+          </button>
+        </div>
       </main>
     </div>
   );

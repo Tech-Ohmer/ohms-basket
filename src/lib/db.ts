@@ -28,10 +28,27 @@ export interface PriceRecord {
   date: string;         // ISO string
 }
 
+export interface ShoppingListItem {
+  id: string;
+  brand: string;
+  description: string;
+  estimatedPrice: number;
+  quantity: number;
+  checked: boolean;
+  createdAt: string;    // ISO string
+}
+
+export interface MonthlyBudget {
+  id: string;           // format: "YYYY-MM"
+  budget: number;       // PHP
+}
+
 class OhmsBasketDB extends Dexie {
   trips!: EntityTable<Trip, 'id'>;
   basketItems!: EntityTable<BasketItem, 'id'>;
   priceRecords!: EntityTable<PriceRecord, 'id'>;
+  shoppingList!: EntityTable<ShoppingListItem, 'id'>;
+  monthlyBudgets!: EntityTable<MonthlyBudget, 'id'>;
 
   constructor() {
     super('OhmsBasketDB');
@@ -39,6 +56,14 @@ class OhmsBasketDB extends Dexie {
       trips: 'id, date, store, paid',
       basketItems: 'id, tripId, brand',
       priceRecords: 'id, brand, store, date',
+    });
+    // v2: add shopping list + monthly budgets
+    this.version(2).stores({
+      trips: 'id, date, store, paid',
+      basketItems: 'id, tripId, brand',
+      priceRecords: 'id, brand, store, date',
+      shoppingList: 'id, checked, createdAt',
+      monthlyBudgets: 'id',
     });
   }
 }
