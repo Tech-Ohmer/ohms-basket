@@ -179,7 +179,7 @@ export default function HomePage() {
         )}
 
         {/* Quick nav */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3">
           <button onClick={() => router.push('/list')}
             className="bg-white rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
             <span className="text-2xl">📝</span>
@@ -194,6 +194,11 @@ export default function HomePage() {
             className="bg-white rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
             <span className="text-2xl">🏪</span>
             <span className="text-xs font-medium text-slate-600 text-center">Price Compare</span>
+          </button>
+          <button onClick={() => router.push('/shared')}
+            className="bg-green-50 border border-green-200 rounded-2xl shadow-sm p-4 flex flex-col items-center gap-1 hover:shadow-md transition-shadow">
+            <span className="text-2xl">👨‍👩‍👧‍👦</span>
+            <span className="text-xs font-medium text-green-700 text-center">Shared Basket</span>
           </button>
         </div>
       </main>
