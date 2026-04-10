@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import UpdateBanner from "@/components/UpdateBanner";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geist.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-800 antialiased">
+        <UpdateBanner />
         {children}
       </body>
     </html>
